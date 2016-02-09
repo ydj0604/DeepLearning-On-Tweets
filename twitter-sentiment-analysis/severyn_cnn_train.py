@@ -13,21 +13,21 @@ from severyn_cnn import severyn_cnn
 
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
-tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
-tf.flags.DEFINE_integer("num_filters", 128, "Number of filters per filter size (default: 128)")
+tf.flags.DEFINE_string("filter_sizes", "3,5", "Comma-separated filter sizes (default: '3,5')")
+tf.flags.DEFINE_integer("num_filters", 256, "Number of filters per filter size (default: 256)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
 tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularizaion lambda (default: 0.0)")
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 100, "Number of training epochs (default: 200)")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
+tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("evaluate_every", 200, "Evaluate model on dev set after this many steps (default: 200)")
+tf.flags.DEFINE_integer("checkpoint_every", 500, "Save model after this many steps (default: 500)")
+tf.flags.DEFINE_integer("learning_rate", 1e-4, "learning rate for optimizer (default: 1e-4)")
 
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_float("dev_ratio", 0.1, "len(dev) / len(total)")
 
 FLAGS = tf.flags.FLAGS
 FLAGS.batch_size
@@ -41,24 +41,8 @@ print("")
 
 # Load data
 print("Loading data...")
-x, y, vocabulary, vocabulary_inv, train_size = data_helpers.load_data()
-
-# divide Semeval and Sam
-x_train, x_dev = x[:train_size], x[train_size:]
-y_train, y_dev = y[:train_size], y[train_size:]
+x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv = data_helpers.load_data()
 num_class = len(y_train[0])
-
-# # Randomly shuffle data
-# np.random.seed(10)
-# shuffle_indices = np.random.permutation(np.arange(len(y)))
-# x_shuffled = x[shuffle_indices]
-# y_shuffled = y[shuffle_indices]
-
-# # Split train/test set
-# # TODO: This is very crude, should use cross-validation
-# size_dev = len(x_shuffled)*FLAGS.dev_ratio
-# x_train, x_dev = x_shuffled[:-size_dev], x_shuffled[-size_dev:]
-# y_train, y_dev = y_shuffled[:-size_dev], y_shuffled[-size_dev:]
 
 # report
 print("Vocabulary Size: {:d}".format(len(vocabulary)))
@@ -84,7 +68,7 @@ with tf.Graph().as_default():
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)
-        optimizer = tf.train.AdamOptimizer(1e-4)
+        optimizer = tf.train.GradientDescentOptimizer(FLAGS.learning_rate)
         grads_and_vars = optimizer.compute_gradients(cnn.loss)
         train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
