@@ -62,9 +62,6 @@ def load_data_and_labels_semeval():
     x_text_new = [entry.split('\t')[2] for entry in new_dataset]
     x_text_new = [clean_str(tweet) for tweet in x_text_new]
     x_text_new = [tk.tokenize(tweet) for tweet in x_text_new]
-    for tweet in x_text_new:
-        if len(tweet) == 0:
-            print tweet
 
     # concat x and x_new
     x_text.extend(x_text_new)
