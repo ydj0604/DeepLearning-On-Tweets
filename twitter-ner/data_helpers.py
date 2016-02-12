@@ -85,5 +85,6 @@ def batch_iter(x, y, batch_size, num_epochs):
         shuffled_y = y[shuffle_indices]
         for batch_num in range(num_batches_per_epoch):
             start_index = batch_num * batch_size
-            end_index = min((batch_num + 1) * batch_size, data_size)
-            yield shuffled_x[start_index:end_index], shuffled_y[start_index:end_index]
+            end_index = (batch_num + 1) * batch_size
+            if end_index <= data_size:
+                yield shuffled_x[start_index:end_index], shuffled_y[start_index:end_index]

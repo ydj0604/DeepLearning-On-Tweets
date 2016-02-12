@@ -82,6 +82,8 @@ def train(args):
             if current_step % args.save_every == 0:
                 out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
                 checkpoint_dir = os.path.join(out_dir, 'checkpoints')
+                if not os.path.exists(checkpoint_dir):
+                    os.makedirs(checkpoint_dir)
                 checkpoint_prefix = os.path.join(checkpoint_dir, "model")
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                 print "Saved model checkpoint to {}\n".format(path)
