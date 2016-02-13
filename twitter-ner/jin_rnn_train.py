@@ -20,7 +20,7 @@ def main():
                        help='minibatch size')
     parser.add_argument('--num_epochs', type=int, default=200,
                        help='number of epochs')
-    parser.add_argument('--evaluate_every', type=int, default=200,
+    parser.add_argument('--evaluate_every', type=int, default=50,
                        help='development test frequency')
     parser.add_argument('--save_every', type=int, default=500,
                        help='save frequency')
@@ -45,7 +45,7 @@ def train(args):
     shuffle_indices = np.random.permutation(np.arange(len(y)))
     x_shuffled = x[shuffle_indices]
     y_shuffled = y[shuffle_indices]
-    dev_size = len(y) * args.dev_ratio
+    dev_size = int(len(y) * args.dev_ratio) / 50 * 50
     x_train, x_dev = x_shuffled[:-dev_size], x_shuffled[-dev_size:]
     y_train, y_dev = y_shuffled[:-dev_size], y_shuffled[-dev_size:]
 
@@ -55,7 +55,7 @@ def train(args):
     args.num_classes = num_classes
 
     # initialize a rnn model
-    model = jin_rnn(args, False)
+    model = jin_rnn(args)
 
     # generate batches from data
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
@@ -69,16 +69,53 @@ def train(args):
             time_str = datetime.datetime.now().isoformat()
 
             # train
-            feed ={
+            feed = {
                 model.input_data: x_batch,
                 model.targets: y_batch
             }
-            current_step, train_loss, state, _ = sess.run([model.global_step, model.cost, model.final_state, model.train_op], feed)
-            print("{}: step {}, loss {:g}".format(time_str, current_step, train_loss))
+            current_step, train_loss, _ = sess.run([model.global_step, model.cost, model.train_op], feed)
+            # print("{}: step {}, loss {:g}".format(time_str, current_step, train_loss))
 
             # evaluate with dev set
             if current_step % args.evaluate_every == 0:
-                print("\nEvaluation:")
+                print("\nEvaluation")
+                dev_batches = data_helpers.batch_iter(x_dev, y_dev, args.batch_size, 1)
+                sum_accuracy = 0.0
+                sum_accuracy_sentence = 0.0
+                num_batches = 0
+
+                for x_dev_batch, y_dev_batch in dev_batches:
+                    feed = {
+                        model.input_data: x_dev_batch,
+                        model.targets: y_dev_batch
+                    }
+                    current_step, accuracy, accuracy_sentence, predictions_sentence = sess.run(
+                            [model.global_step, model.accuracy, model.accuracy_sentence, model.predictions_sentence],
+                            feed)
+
+                    for i in range(len(y_dev_batch)):
+                        curr_sentence = x_dev_batch[i]
+                        curr_target_codes = y_dev_batch[i]
+                        curr_predicted_codes = predictions_sentence[i]
+
+                        if ((1 in list(curr_predicted_codes) or 2 in list(curr_predicted_codes))
+                            and list(curr_predicted_codes) == list(curr_target_codes)):
+                            print ' '.join([vocab_inv[e] for e in curr_sentence])
+                            print curr_target_codes
+                            print curr_predicted_codes
+
+                        # if not list(curr_target_codes) == list(curr_predicted_codes):
+                        #     print ' '.join([vocab_inv[e] for e in curr_sentence])
+                        #     print curr_target_codes
+                        #     print curr_predicted_codes
+
+                    sum_accuracy += accuracy
+                    sum_accuracy_sentence += accuracy_sentence
+                    num_batches += 1
+
+                print("{}: step {}, token-accuracy {:g}, sentence-accuracy {:g}\n".format(
+                        time_str, current_step, sum_accuracy/num_batches, sum_accuracy_sentence/num_batches))
+
             if current_step % args.save_every == 0:
                 out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
                 checkpoint_dir = os.path.join(out_dir, 'checkpoints')

@@ -12,9 +12,9 @@ import sys
 
 
 def load_twitter_rnn():
-    dataset = list(open("./input/twitter/training_set_05.tsv"))
-    # dataset = list(open("./input/twitter/training_set_100.tsv"))
-    # dataset.extend(list(open("./input/alan-ritter.txt")))
+    # dataset = list(open("./input/twitter/training_set_05.tsv"))
+    dataset = list(open("./input/twitter/training_set_100.tsv"))
+    dataset.extend(list(open("./input/alan-ritter.txt")))
     # dataset.extend(list(open("./input/mark-dredze-train.txt")))
     # dataset.extend(list(open("./input/mark-dredze-test.txt")))
 
@@ -51,11 +51,11 @@ def load_twitter_rnn():
 
     # convert each token label into a vector
     def convert_code_to_vec(code):
-        if code == 'I':
+        if code == 'O':
             return 0
-        elif code == 'O':
-            return 1
         elif code == 'B':
+            return 1
+        elif code == 'I':
             return 2
         else:
             print 'Wrong label'
