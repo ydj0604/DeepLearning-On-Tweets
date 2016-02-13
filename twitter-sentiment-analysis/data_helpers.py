@@ -4,6 +4,7 @@ import itertools
 from collections import Counter
 from nltk.tokenize import TweetTokenizer
 import csv
+import os.path
 
 def clean_str(string):
 
@@ -50,7 +51,6 @@ def load_data_and_labels_semeval():
 
     # filter out invalid tweets from new dataset
     new_dataset = [entry for entry in new_dataset if entry.split('\t')[2] != 'Not Available\n']
-    # new_dataset = []
 
     # generate x from old
     tk = TweetTokenizer(reduce_len=True) # handles punctuations
@@ -147,6 +147,53 @@ def build_vocab(sentences):
     return [vocabulary, vocabulary_inv]
 
 
+def isfloat(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
+def build_vocab_embedding(vocab):
+    # try to load the reduced embedding file, or load the original
+    if os.path.isfile("twitter-sentiment-dictionary-embedding.txt"):
+        embedding_file = open("twitter-sentiment-dictionary-embedding.txt")
+    else:
+        embedding_file = open("../twitter-vectors-256-skip.txt")  # TODO: change short !!
+
+    # read the first line to get info
+    first_line = embedding_file.readline()
+    dict_size = int(first_line.split(' ')[0])
+    embedding_dim = int(first_line.split(' ')[1])
+
+    # build a new vocab that contains embeddings
+    new_vocab = {}
+    for i in range(dict_size):
+        curr_line = embedding_file.readline()
+        curr_word = curr_line.split(' ')[0]
+        if curr_word in vocab:
+            embedding_vec = curr_line.split(' ')[1:1+embedding_dim]
+            try:
+                embedding_vec = [float(e) for e in embedding_vec]
+            except ValueError:
+                continue
+            new_vocab[curr_word] = (vocab[curr_word], embedding_vec)
+
+    for word, idx in vocab.items():
+        if word not in new_vocab:
+            new_vocab[word] = (idx, [0.0] * embedding_dim)
+
+    # save reduced embedding file
+    if not os.path.isfile("twitter-sentiment-dictionary-embedding.txt"):
+        save_file = open("twitter-sentiment-dictionary-embedding.txt", 'w')
+        save_file.write("{} {}\n".format(len(new_vocab), embedding_dim))
+        for word, (idx, embedding_vec) in new_vocab.iteritems():
+            save_file.write("{} {}\n".format(word.encode('utf-8'), ' '.join([str(e) for e in embedding_vec])))
+
+    return new_vocab
+
+
 def build_input_data(sentences, labels, vocabulary):
     x = np.array([[vocabulary[word] for word in sentence] for sentence in sentences])
     y = np.array(labels)
@@ -166,12 +213,15 @@ def load_data():
     tweets_padded_train = pad_sentences(tweets_train, max_seq_len)
     tweets_padded_dev = pad_sentences(tweets_dev, max_seq_len)
 
-    # preprocess
+    # build vocab
     tweets_padded_total = tweets_padded_train + tweets_padded_dev
     vocabulary, vocabulary_inv = build_vocab(tweets_padded_total)
+    vocabulary_embedding = build_vocab_embedding(vocabulary)
+
+    # prepare input
     x_train, y_train = build_input_data(tweets_padded_train, labels_train, vocabulary)
     x_dev, y_dev = build_input_data(tweets_padded_dev, labels_dev, vocabulary)
-    return [x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv]
+    return [x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding]
 
 
 def batch_iter(data, batch_size, num_epochs):

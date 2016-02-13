@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import tensorflow as tf
-import numpy as np
 import os
 import time
 import datetime
@@ -28,6 +27,7 @@ tf.flags.DEFINE_integer("learning_rate", 1e-4, "learning rate for optimizer (def
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
+tf.flags.DEFINE_boolean("pre_embedding", True, "Use pre-trained word embeddings")
 
 FLAGS = tf.flags.FLAGS
 FLAGS.batch_size
@@ -41,7 +41,7 @@ print("")
 
 # Load data
 print("Loading data...")
-x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv = data_helpers.load_data()
+x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = data_helpers.load_data()
 num_class = len(y_train[0])
 
 # report
@@ -61,9 +61,9 @@ with tf.Graph().as_default():
             sequence_length=x_train.shape[1],
             num_classes=num_class,
             vocab_size=len(vocabulary),
-            embedding_size=FLAGS.embedding_dim,
             filter_sizes=map(int, FLAGS.filter_sizes.split(",")),
             num_filters=FLAGS.num_filters,
+            vocabulary_embedding=vocabulary_embedding,
             l2_reg_lambda=FLAGS.l2_reg_lambda)
 
         # Define Training procedure
