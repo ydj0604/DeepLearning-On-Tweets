@@ -64,7 +64,8 @@ with tf.Graph().as_default():
             filter_sizes=map(int, FLAGS.filter_sizes.split(",")),
             num_filters=FLAGS.num_filters,
             vocabulary_embedding=vocabulary_embedding,
-            l2_reg_lambda=FLAGS.l2_reg_lambda)
+            l2_reg_lambda=FLAGS.l2_reg_lambda,
+            use_pretrained_embedding=FLAGS.pre_embedding)
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)

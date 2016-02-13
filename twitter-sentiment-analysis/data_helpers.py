@@ -147,14 +147,6 @@ def build_vocab(sentences):
     return [vocabulary, vocabulary_inv]
 
 
-def isfloat(value):
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
-
-
 def build_vocab_embedding(vocab):
     # try to load the reduced embedding file, or load the original
     if os.path.isfile("twitter-sentiment-dictionary-embedding.txt"):

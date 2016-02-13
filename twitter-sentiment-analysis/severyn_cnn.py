@@ -5,7 +5,7 @@ import numpy as np
 class severyn_cnn(object):
     def __init__(
       self, sequence_length, num_classes, vocab_size, filter_sizes, num_filters,
-            vocabulary_embedding, l2_reg_lambda=0.0):
+            vocabulary_embedding, l2_reg_lambda, use_pretrained_embedding):
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
@@ -15,25 +15,23 @@ class severyn_cnn(object):
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
 
-        # make an embedding matrix
-        if vocabulary_embedding is not None:
-            embedding_size = len(vocabulary_embedding[vocabulary_embedding.keys()[0]][1])
-            embedding_mat = np.random.rand(vocab_size, embedding_size)
-            for word, (idx, embedding_vec) in vocabulary_embedding.iteritems():
-                embedding_mat[idx] = embedding_vec
-        else:
-            embedding_size = 256
-            embedding_mat = None
-
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
-            if embedding_mat is None:
-                W = tf.Variable(
-                    tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
-                    name="W")
-            else:
+            if use_pretrained_embedding:
+                # make an embedding matrix
+                embedding_size = len(vocabulary_embedding[vocabulary_embedding.keys()[0]][1])
+                embedding_mat = np.random.rand(vocab_size, embedding_size)
+                for word, (idx, embedding_vec) in vocabulary_embedding.iteritems():
+                    embedding_mat[idx] = embedding_vec
+
+                # make a word embedding variable
                 W = tf.Variable(
                     tf.convert_to_tensor(embedding_mat, dtype=tf.float32),
+                    name="W")
+
+            else:  # use random embeddings
+                W = tf.Variable(
+                    tf.random_uniform([vocab_size, 256], -1.0, 1.0),
                     name="W")
 
             self.embedded_chars = tf.nn.embedding_lookup(W, self.input_x)
