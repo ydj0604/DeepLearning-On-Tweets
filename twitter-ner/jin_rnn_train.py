@@ -33,6 +33,8 @@ def main():
     parser.add_argument('--save_dir', type=str, default='runs',
                        help='directory to store checkpointed models')
     args = parser.parse_args()
+
+    # start training
     train(args)
 
 
@@ -54,6 +56,10 @@ def train(args):
     args.seq_length = len(x[0])
     args.num_classes = num_classes
 
+    # report
+    print("Vocabulary Size: {:d}".format(len(vocab)))
+    print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
+
     # initialize a rnn model
     model = jin_rnn(args)
 
@@ -65,14 +71,11 @@ def train(args):
         saver = tf.train.Saver(tf.all_variables())
         tf.initialize_all_variables().run()
         for x_batch, y_batch in batches:
-            # measure start time
+            # obtain start time
             time_str = datetime.datetime.now().isoformat()
 
             # train
-            feed = {
-                model.input_data: x_batch,
-                model.targets: y_batch
-            }
+            feed = {model.input_data: x_batch, model.targets: y_batch}
             current_step, train_loss, _ = sess.run([model.global_step, model.cost, model.train_op], feed)
             # print("{}: step {}, loss {:g}".format(time_str, current_step, train_loss))
 
@@ -104,11 +107,6 @@ def train(args):
                             print curr_target_codes
                             print curr_predicted_codes
 
-                        # if not list(curr_target_codes) == list(curr_predicted_codes):
-                        #     print ' '.join([vocab_inv[e] for e in curr_sentence])
-                        #     print curr_target_codes
-                        #     print curr_predicted_codes
-
                     sum_accuracy += accuracy
                     sum_accuracy_sentence += accuracy_sentence
                     num_batches += 1
@@ -116,6 +114,7 @@ def train(args):
                 print("{}: step {}, token-accuracy {:g}, sentence-accuracy {:g}\n".format(
                         time_str, current_step, sum_accuracy/num_batches, sum_accuracy_sentence/num_batches))
 
+            # save the model
             if current_step % args.save_every == 0:
                 out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
                 checkpoint_dir = os.path.join(out_dir, 'checkpoints')
