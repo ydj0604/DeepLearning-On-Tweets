@@ -10,12 +10,16 @@ import data_helpers
 
 def main():
     parser = argparse.ArgumentParser()
+
+    # model parameters
     parser.add_argument('--rnn_size', type=int, default=128,
                        help='size of RNN hidden state = embedding dimension')
     parser.add_argument('--num_layers', type=int, default=2,
                        help='number of layers in the RNN')
     parser.add_argument('--model', type=str, default='lstm',
                        help='rnn, gru, or lstm')
+
+    # training parameters
     parser.add_argument('--batch_size', type=int, default=50,
                        help='minibatch size')
     parser.add_argument('--num_epochs', type=int, default=200,
@@ -30,9 +34,18 @@ def main():
                        help='learning rate')
     parser.add_argument('--dev_ratio', type=float, default=0.1,
                        help='decay rate for rmsprop')
+
+    # misc parameters
     parser.add_argument('--save_dir', type=str, default='runs',
                        help='directory to store checkpointed models')
+
     args = parser.parse_args()
+
+    # report parameters
+    print("\nParameters:")
+    for arg in args.__dict__:
+        print("{}={}".format(arg.upper(), args.__dict__[arg]))
+    print("")
 
     # start training
     train(args)
@@ -102,10 +115,7 @@ def train(args):
                 num_batches = 0
 
                 for x_dev_batch, y_dev_batch in dev_batches:
-                    feed = {
-                        model.inputs: x_dev_batch,
-                        model.targets: y_dev_batch
-                    }
+                    feed = {model.inputs: x_dev_batch, model.targets: y_dev_batch}
                     current_step, accuracy, accuracy_sentence, predictions_sentence = sess.run(
                             [model.global_step, model.accuracy, model.accuracy_sentence, model.predictions_sentence],
                             feed)
@@ -115,6 +125,7 @@ def train(args):
                         curr_target_codes = y_dev_batch[i]
                         curr_predicted_codes = predictions_sentence[i]
 
+                        # to see if the model predicts some difficult examples correctly
                         if ((1 in list(curr_predicted_codes) or 2 in list(curr_predicted_codes))
                             and list(curr_predicted_codes) == list(curr_target_codes)):
                             print ' '.join([vocab_inv[e] for e in curr_sentence])
