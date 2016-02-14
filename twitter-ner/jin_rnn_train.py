@@ -60,6 +60,7 @@ def train(args):
     # report
     print("Vocabulary Size: {:d}".format(len(vocab)))
     print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
+    print("Sequence Length: {:d}".format(len(y_train[0])))
 
     # initialize a rnn model
     model = jin_rnn(args)
@@ -76,7 +77,7 @@ def train(args):
             time_str = datetime.datetime.now().isoformat()
 
             # train
-            feed = {model.input_data: x_batch, model.targets: y_batch}
+            feed = {model.inputs: x_batch, model.targets: y_batch}
             current_step, train_loss, _ = sess.run([model.global_step, model.cost, model.train_op], feed)
             # print("{}: step {}, loss {:g}".format(time_str, current_step, train_loss))
 
@@ -90,7 +91,7 @@ def train(args):
 
                 for x_dev_batch, y_dev_batch in dev_batches:
                     feed = {
-                        model.input_data: x_dev_batch,
+                        model.inputs: x_dev_batch,
                         model.targets: y_dev_batch
                     }
                     current_step, accuracy, accuracy_sentence, predictions_sentence = sess.run(
