@@ -40,6 +40,7 @@ def main():
 
 def train(args):
     # load data
+    print("Loading data ...")
     [x, y, vocab, vocab_inv, num_classes] = data_helpers.load_twitter_rnn()
 
     # shuffle and split data
