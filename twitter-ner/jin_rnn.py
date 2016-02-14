@@ -3,7 +3,7 @@ from tensorflow.models.rnn import rnn_cell
 from tensorflow.models.rnn import seq2seq
 
 
-class jin_rnn(object):
+class JinRNN(object):
     def __init__(self, args):
 
         # define cell

@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-class basic_cnn(object):
+class BasicCNN(object):
     def __init__(self, args):
         # prepare
         self.input_x = tf.placeholder(tf.int32, [None, args.seq_length], name="input_x")

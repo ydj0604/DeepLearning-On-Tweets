@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-class severyn_cnn(object):
+class SeverynCNN(object):
     def __init__(
       self, sequence_length, num_classes, vocab_size, filter_sizes, num_filters,
             vocabulary_embedding, l2_reg_lambda, use_pretrained_embedding):

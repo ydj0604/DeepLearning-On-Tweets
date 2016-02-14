@@ -5,7 +5,7 @@ import os
 import time
 import datetime
 import data_helpers
-from severyn_cnn import severyn_cnn
+from severyn_cnn import SeverynCNN
 
 # Parameters
 # ==================================================
@@ -57,7 +57,7 @@ with tf.Graph().as_default():
       log_device_placement=FLAGS.log_device_placement)
     sess = tf.Session(config=session_conf)
     with sess.as_default():
-        cnn = severyn_cnn(
+        cnn = SeverynCNN(
             sequence_length=x_train.shape[1],
             num_classes=num_class,
             vocab_size=len(vocabulary),

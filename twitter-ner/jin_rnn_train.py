@@ -4,7 +4,7 @@ import os
 import numpy as np
 import datetime
 
-from jin_rnn import jin_rnn
+from jin_rnn import JinRNN
 import data_helpers
 
 
@@ -63,7 +63,7 @@ def train(args):
     print("Sequence Length: {:d}".format(len(y_train[0])))
 
     # initialize a rnn model
-    model = jin_rnn(args)
+    model = JinRNN(args)
 
     # generate batches from data
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)

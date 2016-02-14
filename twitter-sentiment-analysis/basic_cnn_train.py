@@ -3,7 +3,7 @@ import argparse
 import os
 import datetime
 import data_helpers
-from basic_cnn import basic_cnn
+from basic_cnn import BasicCNN
 
 
 def main():
@@ -74,7 +74,7 @@ def train(args):
     args.num_classes = num_classes
 
     # initialize a model
-    model = basic_cnn(args)
+    model = BasicCNN(args)
 
     # define output directory
     time_str = datetime.datetime.now().isoformat()
