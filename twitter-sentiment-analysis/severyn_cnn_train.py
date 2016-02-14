@@ -41,7 +41,7 @@ print("")
 
 # Load data
 print("Loading data...")
-x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = data_helpers.load_data()
+x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = data_helpers.load_data(FLAGS.pre_embedding)
 num_class = len(y_train[0])
 
 # report
@@ -124,8 +124,8 @@ with tf.Graph().as_default():
             _, step, summaries, loss, accuracy = sess.run(
                 [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
                 feed_dict)
-            # time_str = datetime.datetime.now().isoformat()
-            # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+            time_str = datetime.datetime.now().isoformat()
+            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
             train_summary_writer.add_summary(summaries, step)
 
         def dev_step(x_batch, y_batch, writer=None):
@@ -143,11 +143,9 @@ with tf.Graph().as_default():
                 writer.add_summary(summaries, step)
 
         # Generate batches
-        batches = data_helpers.batch_iter(
-            zip(x_train, y_train), FLAGS.batch_size, FLAGS.num_epochs)
+        batches = data_helpers.batch_iter(x_train, y_train, FLAGS.batch_size, FLAGS.num_epochs)
         # Training loop. For each batch...
-        for batch in batches:
-            x_batch, y_batch = zip(*batch)
+        for x_batch, y_batch in batches:
             train_step(x_batch, y_batch)
             current_step = tf.train.global_step(sess, global_step)
             if current_step % FLAGS.evaluate_every == 0:

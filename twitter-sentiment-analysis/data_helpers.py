@@ -6,8 +6,8 @@ from nltk.tokenize import TweetTokenizer
 import csv
 import os.path
 
-def clean_str(string):
 
+def clean_str(string):
     # separates helping verbs
     string = re.sub(r"\'s", " \'s", string)
     string = re.sub(r"\'ve", " \'ve", string)
@@ -100,8 +100,7 @@ def load_data_and_labels_sam():
     # load
     with open("./input/2780_freshmen_tweets.csv", 'rU') as f:
         rdr = csv.reader(f)
-        dataset = list(rdr)
-        dataset = dataset[1:] # remove header
+        dataset = list(rdr)[1:]  # remove header
 
     # filter out tweets with unknown sentiment
     dataset = [entry for entry in dataset if entry[4] != '0']
@@ -138,21 +137,26 @@ def pad_sentences(sentences, sequence_length, padding_word="<PAD/>"):
 
 
 def build_vocab(sentences):
-    # Build vocabulary
     word_counts = Counter(itertools.chain(*sentences))
-    # Mapping from index to word
     vocabulary_inv = [x[0] for x in word_counts.most_common()]
-    # Mapping from word to index
     vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
     return [vocabulary, vocabulary_inv]
 
 
 def build_vocab_embedding(vocab):
+    # define files
+    original_embedding_file = "../twitter-vectors-256-skip.txt"
+    reduced_embedding_file = "twitter-sentiment-dictionary-embedding.txt"
+
     # try to load the reduced embedding file, or load the original
-    if os.path.isfile("twitter-sentiment-dictionary-embedding.txt"):
-        embedding_file = open("twitter-sentiment-dictionary-embedding.txt")
+    print("Loading pre-trained embeddings...")
+    if os.path.isfile(reduced_embedding_file):
+        embedding_file = open(reduced_embedding_file)
     else:
-        embedding_file = open("../twitter-vectors-256-skip.txt")  # TODO: change short !!
+        if os.path.isfile(original_embedding_file):
+            embedding_file = open(original_embedding_file)
+        else:
+            return None
 
     # read the first line to get info
     first_line = embedding_file.readline()
@@ -192,7 +196,7 @@ def build_input_data(sentences, labels, vocabulary):
     return [x, y]
 
 
-def load_data():
+def load_data(use_pretrained_embedding):
     # load train set from Semeval
     tweets_train, labels_train = load_data_and_labels_semeval()
 
@@ -208,7 +212,7 @@ def load_data():
     # build vocab
     tweets_padded_total = tweets_padded_train + tweets_padded_dev
     vocabulary, vocabulary_inv = build_vocab(tweets_padded_total)
-    vocabulary_embedding = build_vocab_embedding(vocabulary)
+    vocabulary_embedding = build_vocab_embedding(vocabulary) if use_pretrained_embedding else None
 
     # prepare input
     x_train, y_train = build_input_data(tweets_padded_train, labels_train, vocabulary)
@@ -216,15 +220,14 @@ def load_data():
     return [x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding]
 
 
-def batch_iter(data, batch_size, num_epochs):
-    data = np.array(data)
-    data_size = len(data)
-    num_batches_per_epoch = int(len(data)/batch_size) + 1
+def batch_iter(x, y, batch_size, num_epochs):
+    data_size = len(y)
+    num_batches_per_epoch = int(data_size/batch_size) + 1
     for epoch in range(num_epochs):
-        # Shuffle the data at each epoch
         shuffle_indices = np.random.permutation(np.arange(data_size))
-        shuffled_data = data[shuffle_indices]
+        shuffled_x = x[shuffle_indices]
+        shuffled_y = y[shuffle_indices]
         for batch_num in range(num_batches_per_epoch):
             start_index = batch_num * batch_size
             end_index = min((batch_num + 1) * batch_size, data_size)
-            yield shuffled_data[start_index:end_index]
+            yield shuffled_x[start_index:end_index], shuffled_y[start_index:end_index]
