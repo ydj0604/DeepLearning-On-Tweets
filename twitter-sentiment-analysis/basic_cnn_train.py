@@ -125,7 +125,7 @@ def train(args):
             current_step = tf.train.global_step(sess, model.global_step)
             train_summary_writer.add_summary(summaries, step)
             time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+            # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
 
             # evaluate with dev set
             if current_step % args.evaluate_every == 0:
