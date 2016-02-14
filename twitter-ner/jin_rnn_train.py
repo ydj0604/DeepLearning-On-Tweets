@@ -65,13 +65,25 @@ def train(args):
     # initialize a rnn model
     model = JinRNN(args)
 
+    # define output directory
+    time_str = datetime.datetime.now().isoformat()
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
+
+    # prepare saver
+    checkpoint_dir = os.path.join(out_dir, 'checkpoints')
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+    checkpoint_prefix = os.path.join(checkpoint_dir, "model")
+    saver = tf.train.Saver(tf.all_variables())
+
     # generate batches from data
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
 
-    # train
+    # start a session
     with tf.Session() as sess:
-        saver = tf.train.Saver(tf.all_variables())
+        # initialize
         tf.initialize_all_variables().run()
+
         for x_batch, y_batch in batches:
             # obtain start time
             time_str = datetime.datetime.now().isoformat()
@@ -118,11 +130,6 @@ def train(args):
 
             # save the model
             if current_step % args.save_every == 0:
-                out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
-                checkpoint_dir = os.path.join(out_dir, 'checkpoints')
-                if not os.path.exists(checkpoint_dir):
-                    os.makedirs(checkpoint_dir)
-                checkpoint_prefix = os.path.join(checkpoint_dir, "model")
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                 print "Saved model checkpoint to {}\n".format(path)
 
