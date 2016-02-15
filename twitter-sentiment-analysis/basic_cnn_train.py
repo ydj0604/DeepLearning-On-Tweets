@@ -20,7 +20,7 @@ def main():
                         help='Dropout keep probability (default: 0.5)')
     parser.add_argument('--l2_reg_lambda', type=float, default=0.0,
                         help='L2 regularizaion lambda (default: 0.0)')
-    parser.add_argument('--use_pretrained_embedding', type=bool, default=True,
+    parser.add_argument('--use_pretrained_embedding', type=int, default=1,
                         help='Use pre-trained word embeddings')
 
     # training parameters
@@ -36,9 +36,9 @@ def main():
                         help='learning rate for optimizer (default: 1e-4)')
 
     # misc parameters
-    parser.add_argument('--allow_soft_placement', type=bool, default=True,
+    parser.add_argument('--allow_soft_placement', type=int, default=1,
                         help='Allow device soft device placement')
-    parser.add_argument('--log_device_placement', type=bool, default=False,
+    parser.add_argument('--log_device_placement', type=int, default=0,
                         help='Log placement of ops on devices')
     parser.add_argument('--save_dir', type=str, default='runs',
                        help='directory to store checkpointed models')
