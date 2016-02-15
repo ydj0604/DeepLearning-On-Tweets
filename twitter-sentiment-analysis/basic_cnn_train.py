@@ -107,7 +107,11 @@ def train(args):
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
 
     # start a session
-    with tf.Session() as sess:
+    sess_conf = tf.ConfigProto(
+            allow_soft_placement=args.allow_soft_placement,
+            log_device_placement=args.log_device_placement)
+    sess = tf.Session(config=sess_conf)
+    with sess.as_default():
         # initialize
         tf.initialize_all_variables().run()
         train_summary_writer = tf.train.SummaryWriter(train_summary_dir, sess.graph_def)
