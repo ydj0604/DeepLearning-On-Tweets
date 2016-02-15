@@ -38,6 +38,10 @@ def main():
     # misc parameters
     parser.add_argument('--save_dir', type=str, default='runs',
                        help='directory to store checkpointed models')
+    parser.add_argument('--allow_soft_placement', type=int, default=1,
+                        help='Allow device soft device placement')
+    parser.add_argument('--log_device_placement', type=int, default=0,
+                        help='Log placement of ops on devices')
 
     args = parser.parse_args()
 
@@ -93,7 +97,11 @@ def train(args):
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
 
     # start a session
-    with tf.Session() as sess:
+    sess_conf = tf.ConfigProto(
+            allow_soft_placement=args.allow_soft_placement,
+            log_device_placement=args.log_device_placement)
+    sess = tf.Session(config=sess_conf)
+    with sess.as_default():
         # initialize
         tf.initialize_all_variables().run()
 
