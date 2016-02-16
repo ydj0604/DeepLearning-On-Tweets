@@ -124,8 +124,9 @@ def train(args):
 
                 for x_dev_batch, y_dev_batch in dev_batches:
                     feed = {model.inputs: x_dev_batch, model.targets: y_dev_batch}
-                    current_step, accuracy, accuracy_sentence, predictions_sentence = sess.run(
-                            [model.global_step, model.accuracy, model.accuracy_sentence, model.predictions_sentence],
+                    current_step, accuracy, accuracy_sentence, predictions_sentence, loss = sess.run(
+                            [model.global_step, model.accuracy, model.accuracy_sentence, model.predictions_sentence,
+                             model.cost],
                             feed)
 
                     for i in range(len(y_dev_batch)):
@@ -144,8 +145,8 @@ def train(args):
                     sum_accuracy_sentence += accuracy_sentence
                     num_batches += 1
 
-                print("{}: step {}, token-accuracy {:g}, sentence-accuracy {:g}\n".format(
-                        time_str, current_step, sum_accuracy/num_batches, sum_accuracy_sentence/num_batches))
+                print("{}: step {}, token-accuracy {:g}, sentence-accuracy {:g}, loss {:g}\n".format(
+                        time_str, current_step, sum_accuracy/num_batches, sum_accuracy_sentence/num_batches, loss))
 
             # save the model
             if current_step % args.save_every == 0:
