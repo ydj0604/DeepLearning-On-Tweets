@@ -28,15 +28,22 @@ class JinRNN(object):
         # feed inputs into rnn
         with tf.name_scope("rnn"):
             outputs, states = seq2seq.rnn_decoder(inputs, self.initial_state, cell, loop_function=None, scope='rnnlm')
-            output = tf.reshape(tf.concat(1, outputs), [-1, args.rnn_size])
-            self.logits = tf.nn.xw_plus_b(output, W, b)
+            self.output = tf.reshape(tf.concat(1, outputs), [-1, args.rnn_size])
+
+        # Add dropout
+        with tf.name_scope("dropout"):
+            self.h_drop = tf.nn.dropout(self.output, args.dropout_keep_prob)
+
+        # output layer
+        with tf.name_scope("output"):
+            self.logits = tf.nn.xw_plus_b(self.h_drop, W, b)
             self.probs = tf.nn.softmax(self.logits)
             self.predictions = tf.cast(tf.argmax(self.logits, 1), tf.int32)
-            self.reshaped_targets = tf.reshape(self.targets, [-1])
 
         # accuracy
         with tf.name_scope("accuracy"):
             # calculate token-level accuracy
+            self.reshaped_targets = tf.reshape(self.targets, [-1])
             correct_predictions = tf.equal(self.predictions, self.reshaped_targets)
             self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"))
 

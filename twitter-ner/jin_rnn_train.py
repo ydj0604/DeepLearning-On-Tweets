@@ -18,13 +18,15 @@ def main():
                        help='number of layers in the RNN')
     parser.add_argument('--model', type=str, default='lstm',
                        help='rnn, gru, or lstm')
+    parser.add_argument('--dropout_keep_prob', type=float, default=0.5,
+                        help='Dropout keep probability (default: 0.5)')
 
     # training parameters
     parser.add_argument('--batch_size', type=int, default=50,
                        help='minibatch size')
     parser.add_argument('--num_epochs', type=int, default=200,
                        help='number of epochs')
-    parser.add_argument('--evaluate_every', type=int, default=50,
+    parser.add_argument('--evaluate_every', type=int, default=100,
                        help='development test frequency')
     parser.add_argument('--save_every', type=int, default=500,
                        help='save frequency')
