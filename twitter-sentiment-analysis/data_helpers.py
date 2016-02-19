@@ -176,7 +176,7 @@ def build_vocab_embedding(vocab):
                 continue
             new_vocab[curr_word] = (vocab[curr_word], embedding_vec)
 
-    for word, idx in vocab.items():
+    for word, idx in vocab.iteritems():
         if word not in new_vocab:
             new_vocab[word] = (idx, [0.0] * embedding_dim)
 
