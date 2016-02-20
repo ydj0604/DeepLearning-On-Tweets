@@ -54,10 +54,10 @@ def main():
     print("")
 
     # start training
-    train(args)
+    initiate(args)
 
 
-def train(args):
+def initiate(args):
     # load data
     print("Loading data...")
     x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = \
