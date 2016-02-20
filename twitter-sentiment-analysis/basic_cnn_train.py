@@ -4,6 +4,7 @@ import os
 import datetime
 import data_helpers
 from basic_cnn import BasicCNN
+from deep_cnn import DeepCNN
 
 
 def main():
@@ -74,7 +75,7 @@ def initiate(args):
     args.num_classes = num_classes
 
     # initialize a model
-    model = BasicCNN(args)
+    model = DeepCNN(args)
 
     # define output directory
     time_str = datetime.datetime.now().isoformat()
