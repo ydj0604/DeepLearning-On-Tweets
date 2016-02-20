@@ -5,6 +5,7 @@ import datetime
 import data_helpers
 from basic_cnn import BasicCNN
 from deep_cnn import DeepCNN
+import sys
 
 
 def main():
@@ -43,6 +44,8 @@ def main():
                        help='directory to store checkpointed models')
     parser.add_argument('--train', type=int, default=1,
                        help='train from scratch')
+    parser.add_argument('--model', type=str, default='deep',
+                       help='which model to run')
 
     args = parser.parse_args()
 
@@ -75,7 +78,13 @@ def initiate(args):
     args.num_classes = num_classes
 
     # initialize a model
-    model = DeepCNN(args)
+    if args.model == 'deep':
+        model = DeepCNN(args)
+    elif args.model == 'basic':
+        model = BasicCNN(args)
+    else:
+        print("Invalid model")
+        sys.exit()
 
     # define output directory
     time_str = datetime.datetime.now().isoformat()
