@@ -20,8 +20,6 @@ def main():
                         help='Dropout keep probability (default: 0.5)')
     parser.add_argument('--l2_reg_lambda', type=float, default=0.0,
                         help='L2 regularizaion lambda (default: 0.0)')
-    parser.add_argument('--use_pretrained_embedding', type=int, default=1,
-                        help='Use pre-trained word embeddings')
 
     # training parameters
     parser.add_argument('--batch_size', type=int, default=64,
@@ -34,6 +32,8 @@ def main():
                         help='Save model after this many steps (default: 500)')
     parser.add_argument('--learning_rate', type=float, default=1e-4,
                         help='learning rate for optimizer (default: 1e-4)')
+    parser.add_argument('--use_pretrained_embedding', type=int, default=1,
+                        help='Use pre-trained word embeddings')
 
     # misc parameters
     parser.add_argument('--allow_soft_placement', type=int, default=1,
@@ -42,6 +42,8 @@ def main():
                         help='Log placement of ops on devices')
     parser.add_argument('--save_dir', type=str, default='runs',
                        help='directory to store checkpointed models')
+    parser.add_argument('--train', type=int, default=1,
+                       help='train from scratch')
 
     args = parser.parse_args()
 
@@ -106,6 +108,34 @@ def train(args):
     # generate batches
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
 
+    # define train / test methods
+    def train_model(x, y, dropout_prob, writer):
+        feed_dict = {
+          model.input_x: x,
+          model.input_y: y,
+          model.dropout_keep_prob: dropout_prob
+        }
+        _, step, loss, accuracy, summaries = sess.run(
+            [model.train_op, model.global_step, model.loss, model.accuracy, train_summary_op],
+            feed_dict)
+        writer.add_summary(summaries, step)
+        # time_str = datetime.datetime.now().isoformat()
+        # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+
+    def test_model(x, y):
+        print("\nEvaluate:")
+        feed_dict = {
+          model.input_x: x,
+          model.input_y: y,
+          model.dropout_keep_prob: 1.0
+        }
+        step, loss, accuracy, predictions, targets = sess.run(
+                [model.global_step, model.loss, model.accuracy, model.predictions, model.targets],
+                feed_dict)
+        time_str = datetime.datetime.now().isoformat()
+        print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+        print("")
+
     # start a session
     sess_conf = tf.ConfigProto(
             allow_soft_placement=args.allow_soft_placement,
@@ -116,40 +146,23 @@ def train(args):
         tf.initialize_all_variables().run()
         train_summary_writer = tf.train.SummaryWriter(train_summary_dir, sess.graph_def)
 
-        for x_batch, y_batch in batches:
-            # train
-            feed_dict = {
-              model.input_x: x_batch,
-              model.input_y: y_batch,
-              model.dropout_keep_prob: args.dropout_keep_prob
-            }
-            _, step, loss, accuracy, summaries = sess.run(
-                [model.train_op, model.global_step, model.loss, model.accuracy, train_summary_op],
-                feed_dict)
-            current_step = tf.train.global_step(sess, model.global_step)
-            train_summary_writer.add_summary(summaries, step)
-            time_str = datetime.datetime.now().isoformat()
-            # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+        if args.train: # train the model from scratch
+            for x_batch, y_batch in batches:
+                # train
+                train_model(x_batch, y_batch, args.dropout_keep_prob, train_summary_writer)
+                current_step = tf.train.global_step(sess, model.global_step)
 
-            # evaluate with dev set
-            if current_step % args.evaluate_every == 0:
-                print("\nEvaluation:")
-                feed_dict = {
-                  model.input_x: x_dev,
-                  model.input_y: y_dev,
-                  model.dropout_keep_prob: 1.0
-                }
-                step, loss, accuracy, predictions, targets = sess.run(
-                        [model.global_step, model.loss, model.accuracy, model.predictions, model.targets],
-                        feed_dict)
-                time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-                print("")
+                # evaluate with dev set
+                if current_step % args.evaluate_every == 0:
+                    test_model(x_dev, y_dev)
 
-            # save model
-            if current_step % args.checkpoint_every == 0:
-                path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                print("Saved model checkpoint to {}\n".format(path))
+                # save model
+                if current_step % args.checkpoint_every == 0:
+                    path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                    print("Saved model checkpoint to {}\n".format(path))
+
+        else: # load the model
+            print 'Loading the model...'
 
 
 if __name__ == '__main__':

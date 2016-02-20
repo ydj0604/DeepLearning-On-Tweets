@@ -143,38 +143,59 @@ def build_vocab(sentences):
     return [vocabulary, vocabulary_inv]
 
 
-def build_vocab_embedding(vocab):
+def build_vocab_embedding(vocab, binary=True):
     # define files
-    original_embedding_file = "../twitter-vectors-256-skip.txt"
+    original_embedding_file = "../word2vec_twitter_model.bin"
     reduced_embedding_file = "twitter-sentiment-dictionary-embedding.txt"
+    use_reduced = False
 
     # try to load the reduced embedding file, or load the original
     print("Loading pre-trained embeddings...")
     if os.path.isfile(reduced_embedding_file):
         embedding_file = open(reduced_embedding_file)
+        use_reduced = True
     else:
         if os.path.isfile(original_embedding_file):
             embedding_file = open(original_embedding_file)
         else:
             return None
 
-    # read the first line to get info
-    first_line = embedding_file.readline()
-    dict_size = int(first_line.split(' ')[0])
-    embedding_dim = int(first_line.split(' ')[1])
+    if not use_reduced and binary:
+        header = embedding_file.readline()
+        dict_size, embedding_dim = map(int, header.split())
+        binary_len = np.dtype('float32').itemsize * embedding_dim
 
-    # build a new vocab that contains embeddings
-    new_vocab = {}
-    for i in range(dict_size):
-        curr_line = embedding_file.readline()
-        curr_word = curr_line.split(' ')[0]
-        if curr_word in vocab:
-            embedding_vec = curr_line.split(' ')[1:1+embedding_dim]
-            try:
-                embedding_vec = [float(e) for e in embedding_vec]
-            except ValueError:
-                continue
-            new_vocab[curr_word] = (vocab[curr_word], embedding_vec)
+        new_vocab = {}
+        for line in xrange(dict_size):
+            curr_word = []
+            while True:
+                ch = embedding_file.read(1)
+                if ch == ' ':
+                    curr_word = ''.join(curr_word)
+                    break
+                if ch != '\n':
+                    curr_word.append(ch)
+            embedding_vec = list(np.fromstring(embedding_file.read(binary_len), dtype='float32'))
+            if curr_word in vocab:
+                new_vocab[curr_word] = (vocab[curr_word], embedding_vec)
+    else:
+        # read the first line to get info
+        first_line = embedding_file.readline()
+        dict_size = int(first_line.split(' ')[0])
+        embedding_dim = int(first_line.split(' ')[1])
+
+        # build a new vocab that contains embeddings
+        new_vocab = {}
+        for i in range(dict_size):
+            curr_line = embedding_file.readline()
+            curr_word = curr_line.split(' ')[0]
+            if curr_word in vocab:
+                embedding_vec = curr_line.split(' ')[1:1+embedding_dim]
+                try:
+                    embedding_vec = [float(e) for e in embedding_vec]
+                except ValueError:
+                    continue
+                new_vocab[curr_word] = (vocab[curr_word], embedding_vec)
 
     for word, idx in vocab.iteritems():
         if word not in new_vocab:
