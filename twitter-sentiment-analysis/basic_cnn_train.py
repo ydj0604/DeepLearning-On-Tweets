@@ -10,15 +10,13 @@ def main():
     parser = argparse.ArgumentParser()
 
     # model hyper-parameters
-    parser.add_argument('--embedding_dim', type=int, default=128,
-                        help='Dimensionality of character embedding (default: 128)')
     parser.add_argument('--filter_sizes', type=str, default='3,4,5',
                         help='Comma-separated filter sizes')
     parser.add_argument('--num_filters', type=int, default=256,
                         help='Number of filters per filter size (default: 256)')
     parser.add_argument('--dropout_keep_prob', type=float, default=0.5,
                         help='Dropout keep probability (default: 0.5)')
-    parser.add_argument('--l2_reg_lambda', type=float, default=0.0,
+    parser.add_argument('--l2_reg_lambda', type=float, default=2.0,
                         help='L2 regularizaion lambda (default: 0.0)')
 
     # training parameters
@@ -26,9 +24,9 @@ def main():
                         help='Batch Size (default: 64)')
     parser.add_argument('--num_epochs', type=int, default=200,
                         help='Number of training epochs (default: 200)')
-    parser.add_argument('--evaluate_every', type=int, default=200,
+    parser.add_argument('--evaluate_every', type=int, default=100,
                         help='Evaluate model on dev set after this many steps (default: 200)')
-    parser.add_argument('--checkpoint_every', type=int, default=500,
+    parser.add_argument('--checkpoint_every', type=int, default=100,
                         help='Save model after this many steps (default: 500)')
     parser.add_argument('--learning_rate', type=float, default=1e-4,
                         help='learning rate for optimizer (default: 1e-4)')
