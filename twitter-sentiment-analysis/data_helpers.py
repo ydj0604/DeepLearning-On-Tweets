@@ -241,6 +241,33 @@ def load_data(use_pretrained_embedding):
     return [x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding]
 
 
+def load_data_semeval_only(use_pretrained_embedding):
+    # load train set from Semeval
+    tweets, labels = load_data_and_labels_semeval()
+
+    # pad train and dev tweets
+    max_seq_len = max([len(tweet) for tweet in tweets])
+    tweets_padded = pad_sentences(tweets, max_seq_len)
+
+    # build vocab
+    vocabulary, vocabulary_inv = build_vocab(tweets_padded)
+    vocabulary_embedding = build_vocab_embedding(vocabulary) if use_pretrained_embedding else None
+
+    # prepare input
+    x, y = build_input_data(tweets_padded, labels, vocabulary)
+
+    # shuffle and split
+    np.random.seed(10)  # TODO: to use a fixed dev set
+    shuffle_indices = np.random.permutation(np.arange(len(labels)))
+    x_shuffled = x[shuffle_indices]
+    y_shuffled = y[shuffle_indices]
+    dev_size = int(len(labels) * 0.1)  # TODO: dev ratio = 0.1
+    x_train, x_dev = x_shuffled[:-dev_size], x_shuffled[-dev_size:]
+    y_train, y_dev = y_shuffled[:-dev_size], y_shuffled[-dev_size:]
+
+    return [x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding]
+
+
 def batch_iter(x, y, batch_size, num_epochs):
     data_size = len(y)
     num_batches_per_epoch = int(data_size/batch_size) + 1
