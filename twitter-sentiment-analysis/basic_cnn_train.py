@@ -46,6 +46,8 @@ def main():
                        help='train from scratch')
     parser.add_argument('--model', type=str, default='deep',
                        help='which model to run')
+    parser.add_argument('--data', type=str, default='semeval',
+                       help='which data to run')
 
     args = parser.parse_args()
 
@@ -63,7 +65,8 @@ def initiate(args):
     # load data
     print("Loading data...")
     x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = \
-        data_helpers.load_data(args.use_pretrained_embedding)
+        data_helpers.load_data_semeval_only(args.use_pretrained_embedding) if args.data == 'semeval' \
+        else data_helpers.load_data(args.use_pretrained_embedding)
     num_classes = len(y_train[0])
 
     # report
@@ -154,7 +157,7 @@ def initiate(args):
         tf.initialize_all_variables().run()
         train_summary_writer = tf.train.SummaryWriter(train_summary_dir, sess.graph_def)
 
-        if args.train: # train the model from scratch
+        if args.train:  # train the model from scratch
             for x_batch, y_batch in batches:
                 # train
                 train_model(x_batch, y_batch, args.dropout_keep_prob, train_summary_writer)
@@ -169,7 +172,7 @@ def initiate(args):
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print("Saved model checkpoint to {}\n".format(path))
 
-        else: # load the model
+        else:  # load the model
             print 'Loading the model...'
 
 
