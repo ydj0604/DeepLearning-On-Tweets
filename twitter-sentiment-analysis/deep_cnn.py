@@ -62,6 +62,10 @@ class DeepCNN(object):
         # seq_length * embedding_size * (num_filters * num_filter_sizes)
         self.first_convolution_outputs_concat = tf.concat(3, first_convolution_outputs)
 
+        # dropout layer
+        with tf.name_scope("first-dropout"):
+            self.h_drop_first = tf.nn.dropout(self.first_convolution_outputs_concat, self.dropout_keep_prob)
+
         # second convolution
         pooled_outputs = []
         for filter_size in args.filter_sizes:
@@ -70,7 +74,7 @@ class DeepCNN(object):
                 W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
                 b = tf.Variable(tf.constant(0.1, shape=[args.num_filters]), name="b")
                 conv = tf.nn.conv2d(
-                    self.first_convolution_outputs_concat,
+                    self.h_drop_first,
                     W,
                     strides=[1, 1, 1, 1],
                     padding="SAME",
@@ -94,8 +98,8 @@ class DeepCNN(object):
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
 
         # dropout layer
-        with tf.name_scope("dropout"):
-            self.h_drop = tf.nn.dropout(self.h_pool_flat, self.dropout_keep_prob)
+        with tf.name_scope("second-dropout"):
+            self.h_drop_second = tf.nn.dropout(self.h_pool_flat, self.dropout_keep_prob)
 
         # output layer (fully-connected layer included)
         with tf.name_scope("output"):
@@ -103,7 +107,7 @@ class DeepCNN(object):
             b = tf.Variable(tf.constant(0.1, shape=[args.num_classes]), name="b")
             l2_loss += tf.nn.l2_loss(W)
             l2_loss += tf.nn.l2_loss(b)
-            self.logits = tf.nn.xw_plus_b(self.h_drop, W, b, name="logits")
+            self.logits = tf.nn.xw_plus_b(self.h_drop_second, W, b, name="logits")
             self.predictions = tf.argmax(self.logits, 1, name="predictions")
 
         # calculate accuracy
