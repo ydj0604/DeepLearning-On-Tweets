@@ -5,6 +5,7 @@ import datetime
 import data_helpers
 from basic_cnn import BasicCNN
 from deep_cnn import DeepCNN
+from logger import Logger
 import sys
 
 
@@ -44,34 +45,44 @@ def main():
                        help='directory to store checkpointed models')
     parser.add_argument('--train', type=int, default=1,
                        help='train from scratch')
-    parser.add_argument('--model', type=str, default='deep',
+    parser.add_argument('--model', type=str, default='basic',
                        help='which model to run')
     parser.add_argument('--data', type=str, default='semeval',
                        help='which data to run')
 
     args = parser.parse_args()
 
-    # report parameters
-    print("\nParameters:")
-    for arg in args.__dict__:
-        print("{}={}".format(arg.upper(), args.__dict__[arg]))
-    print("")
-
     # start training
     initiate(args)
 
 
 def initiate(args):
+    # define output directory
+    time_str = datetime.datetime.now().isoformat()
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    # initiate logger
+    log_file_path = os.path.join(out_dir, 'log')
+    logger = Logger(log_file_path)
+
+    # report parameters
+    logger.write("\nParameters:")
+    for arg in args.__dict__:
+        logger.write("{}={}".format(arg.upper(), args.__dict__[arg]))
+    logger.write("")
+
     # load data
-    print("Loading data...")
+    logger.write("Loading data...")
     x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = \
         data_helpers.load_data_semeval_only(args.use_pretrained_embedding) if args.data == 'semeval' \
         else data_helpers.load_data(args.use_pretrained_embedding)
     num_classes = len(y_train[0])
 
     # report
-    print("Vocabulary Size: {:d}".format(len(vocabulary)))
-    print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
+    logger.write("Vocabulary Size: {:d}".format(len(vocabulary)))
+    logger.write("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 
     # fill out missing arg values
     args.seq_length = x_train.shape[1]
@@ -86,12 +97,8 @@ def initiate(args):
     elif args.model == 'basic':
         model = BasicCNN(args)
     else:
-        print("Invalid model")
+        logger.write("Invalid model")
         sys.exit()
-
-    # define output directory
-    time_str = datetime.datetime.now().isoformat()
-    out_dir = os.path.abspath(os.path.join(os.path.curdir, args.save_dir, time_str))
 
     # for train summary
     grad_summaries = []
@@ -120,7 +127,7 @@ def initiate(args):
     batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
 
     # define train / test methods
-    def train_model(x, y, dropout_prob, writer):
+    def train_model(x, y, dropout_prob, writer, log=False):
         feed_dict = {
           model.input_x: x,
           model.input_y: y,
@@ -130,11 +137,12 @@ def initiate(args):
             [model.train_op, model.global_step, model.loss, model.accuracy, train_summary_op],
             feed_dict)
         writer.add_summary(summaries, step)
-        # time_str = datetime.datetime.now().isoformat()
-        # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+        if log:
+            time_str = datetime.datetime.now().isoformat()
+            logger.write("{}: step {}, loss {:g}, acc {:g}".format(time_str, step-1, loss, accuracy))
 
     def test_model(x, y):
-        print("\nEvaluate:")
+        logger.write("\nEvaluate:")
         feed_dict = {
           model.input_x: x,
           model.input_y: y,
@@ -144,8 +152,8 @@ def initiate(args):
                 [model.global_step, model.loss, model.accuracy, model.predictions, model.targets],
                 feed_dict)
         time_str = datetime.datetime.now().isoformat()
-        print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-        print("")
+        logger.write("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+        logger.write("")
 
     # start a session
     sess_conf = tf.ConfigProto(
@@ -156,11 +164,13 @@ def initiate(args):
         # initialize
         tf.initialize_all_variables().run()
         train_summary_writer = tf.train.SummaryWriter(train_summary_dir, sess.graph_def)
+        current_step = 0
 
         if args.train:  # train the model from scratch
             for x_batch, y_batch in batches:
                 # train
-                train_model(x_batch, y_batch, args.dropout_keep_prob, train_summary_writer)
+                train_model(x_batch, y_batch, args.dropout_keep_prob, train_summary_writer,
+                            current_step % (args.evaluate_every/4) == 0)
                 current_step = tf.train.global_step(sess, model.global_step)
 
                 # evaluate with dev set
@@ -170,10 +180,10 @@ def initiate(args):
                 # save model
                 if current_step % args.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                    print("Saved model checkpoint to {}\n".format(path))
+                    logger.write("Saved model checkpoint to {}\n".format(path))
 
         else:  # load the model
-            print 'Loading the model...'
+            logger.write("Loading the model...")
 
 
 if __name__ == '__main__':

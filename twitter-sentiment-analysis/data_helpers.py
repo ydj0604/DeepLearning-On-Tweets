@@ -150,7 +150,6 @@ def build_vocab_embedding(vocab, binary=True):
     use_reduced = False
 
     # try to load the reduced embedding file, or load the original
-    print("Loading pre-trained embeddings...")
     if os.path.isfile(reduced_embedding_file):
         embedding_file = open(reduced_embedding_file)
         use_reduced = True
