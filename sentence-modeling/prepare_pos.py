@@ -1,19 +1,26 @@
 import csv
+from nltk.tag import StanfordPOSTagger
+from nltk.tokenize import TweetTokenizer
 
 
-def prepare_amazon(num_split):
-    with open("./data/amazon-fine-foods/Reviews.csv", 'rU') as f:
-        dataset = list(csv.reader(f))[1:]  # remove header
-    text = [line[9].strip() for line in dataset]
+def prepare_amazon():
+    with open("./data/amazon-fine-foods/Reviews.csv", 'rU') as fin:
+        with open("./data/amazon-fine-foods/Reviews_with_pos.csv", 'w') as fout:
+            reader = csv.DictReader(fin)
+            writer = csv.DictWriter(fout, ['Text_POS', 'Score'])
+            pos_tagger = StanfordPOSTagger(
+                    './data/pos-tag/english-bidirectional-distsim.tagger',
+                    './data/pos-tag/stanford-postagger.jar')
+            tokenizer = TweetTokenizer(reduce_len=True)
 
-    num_lines_processed = 0
-    for sentence in text:
-        if num_lines_processed % (len(text)/num_split) == 0:
-            file_num = num_lines_processed / (len(text)/num_split)
-            f = open("./data/amazon-fine-foods/Reviews_prep_for_pos_{}.txt".format(file_num), 'w')
-        f.write(sentence + '\n')
-        num_lines_processed += 1
+            writer.writeheader()
+            for row in reader:
+                review = row['Text']
+                score = row['Score']
+                processed_review = pos_tagger.tag(tokenizer.tokenize(review))  # list of tuples
+                processed_review = [(token.encode("utf-8"), tag.encode("utf-8")) for (token, tag) in processed_review]
+                writer.writerow({'Text_POS': processed_review, 'Score': score})
 
 
 if __name__ == '__main__':
-    prepare_amazon(5)
+    prepare_amazon()
