@@ -22,7 +22,7 @@ def main():
                         help='Dropout keep probability')
 
     # training parameters
-    parser.add_argument('--batch_size', type=int, default=50,
+    parser.add_argument('--batch_size', type=int, default=100,
                        help='minibatch size')
     parser.add_argument('--num_epochs', type=int, default=50,
                        help='number of epochs')
@@ -155,7 +155,7 @@ def train(args):
 
             # generate batches
             train_batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
-            test_batches = data_helpers.batch_iter(x_test, y_test, args.batch_size, args.num_epochs)
+            test_batches = data_helpers.batch_iter(x_test, y_test, args.batch_size, 1)
 
             # current fold results
             curr_best_sentene_acc = 0.0
