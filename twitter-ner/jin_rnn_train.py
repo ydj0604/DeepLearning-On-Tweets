@@ -153,9 +153,8 @@ def train(args):
             print "Fold #{} Train/Test Size: {}/{}".format(i, len(y_train), len(y_test))
             logger.write("Fold #{} Train/Test Size: {}/{}".format(i, len(y_train), len(y_test)))
 
-            # generate batches
+            # generate train batches
             train_batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
-            test_batches = data_helpers.batch_iter(x_test, y_test, args.batch_size, 1)
 
             # current fold results
             curr_best_sentene_acc = 0.0
@@ -182,6 +181,7 @@ def train(args):
                     sum_accuracy_sentence = 0.0
                     num_batches = 0
 
+                    test_batches = data_helpers.batch_iter(x_test, y_test, args.batch_size, 1)
                     for x_test_batch, y_test_batch in test_batches:
                         feed = {model.inputs: x_test_batch,
                                 model.targets: y_test_batch,
