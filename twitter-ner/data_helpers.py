@@ -1,7 +1,4 @@
 import numpy as np
-import itertools
-from collections import Counter
-import sys
 
 # TODO
 # handle @

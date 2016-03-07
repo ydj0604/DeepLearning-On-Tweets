@@ -3,7 +3,7 @@ import argparse
 import os
 import numpy as np
 import datetime
-
+from logger import Logger
 from jin_rnn import JinRNN
 import data_helpers
 
@@ -82,8 +82,13 @@ def split_into_k_folds(x, y, k=10):
 
 
 def train(args):
+    # start logger
+    time_str = datetime.datetime.now().isoformat()
+    logger = Logger('log_{}'.format(time_str))
+
     # load data
     print "Loading data ..."
+    logger.write("Loading data ...")
     x, y, vocab, vocab_inv, emb_vocab, num_classes = data_helpers.load_twitter_rnn()
 
     # split into k folds
@@ -103,6 +108,9 @@ def train(args):
     print "Vocabulary Size: {:d}".format(len(vocab))
     print "Total/fold size: {:d}/{:d}".format(len(y), len(x_folds[0]))
     print "Sequence Length: {:d}".format(len(y[0]))
+    logger.write("Vocabulary Size: {:d}".format(len(vocab)))
+    logger.write("Total/fold size: {:d}/{:d}".format(len(y), len(x_folds[0])))
+    logger.write("Sequence Length: {:d}".format(len(y[0])))
 
     # initialize a rnn model
     model = JinRNN(args)
@@ -143,6 +151,7 @@ def train(args):
                     y_train = y_folds[j] if len(y_train) == 0 else np.concatenate((y_train, y_folds[j]), axis=0)
 
             print "Fold #{} Train/Test Size: {}/{}".format(i, len(y_train), len(y_test))
+            logger.write("Fold #{} Train/Test Size: {}/{}".format(i, len(y_train), len(y_test)))
 
             # generate batches
             train_batches = data_helpers.batch_iter(x_train, y_train, args.batch_size, args.num_epochs)
@@ -168,6 +177,7 @@ def train(args):
                 # evaluate with test set
                 if current_step % args.evaluate_every == 0:
                     print "\nEvaluation"
+                    logger.write("\nEvaluation")
                     sum_accuracy = 0.0
                     sum_accuracy_sentence = 0.0
                     num_batches = 0
@@ -202,6 +212,9 @@ def train(args):
 
                     print "{}: step {}, token-accuracy {:g}, sentence-accuracy {:g}, loss {:g}\n".format(
                             time_str, current_step, sum_accuracy/num_batches, sum_accuracy_sentence/num_batches, loss)
+                    logger.write("{}: step {}, token-accuracy {:g}, sentence-accuracy {:g}, loss {:g}\n"
+                                 .format(time_str, current_step, sum_accuracy/num_batches,
+                                         sum_accuracy_sentence/num_batches, loss))
 
                     # set the best result for the current fold
                     curr_best_sentene_acc = max(curr_best_sentene_acc, sum_accuracy_sentence/num_batches)
@@ -211,11 +224,16 @@ def train(args):
                 if current_step % args.save_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                     print "Saved model checkpoint to {}\n".format(path)
+                    logger.write("Saved model checkpoint to {}\n".format(path))
 
             print "-------------------------------------------------------------"
             print "Fold #{} RESULTS: token-accuracy {:g}, sentence-accuracy {:g}"\
                 .format(i, curr_best_token_acc, curr_best_sentene_acc)
             print "-------------------------------------------------------------"
+            logger.write("-------------------------------------------------------------")
+            logger.write("Fold #{} RESULTS: token-accuracy {:g}, sentence-accuracy {:g}"
+                         .format(i, curr_best_token_acc, curr_best_sentene_acc))
+            logger.write("-------------------------------------------------------------")
 
             # add to the results list
             test_sentence_acc_list.append(curr_best_sentene_acc)
@@ -225,6 +243,10 @@ def train(args):
         print "FINAL RESULTS: token-accuracy {:g}, sentence-accuracy {:g}"\
             .format(np.mean(test_token_acc_list), np.mean(test_sentence_acc_list))
         print "=========================================================="
+        logger.write("==========================================================")
+        logger.write("FINAL RESULTS: token-accuracy {:g}, sentence-accuracy {:g}"
+                     .format(np.mean(test_token_acc_list), np.mean(test_sentence_acc_list)))
+        logger.write("==========================================================")
 
 
 if __name__ == '__main__':
