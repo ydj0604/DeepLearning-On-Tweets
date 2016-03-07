@@ -27,6 +27,34 @@ def convert_code_to_vec(code):
         return -1
 
 
+def build_vocab_embedding(vocab):
+    print "Loading pretrained word embeddings..."
+    with open("../word2vec_twitter_model.bin") as embedding_file:
+        header = embedding_file.readline()
+        dict_size, embedding_dim = map(int, header.split())
+        binary_len = np.dtype('float32').itemsize * embedding_dim
+
+        new_vocab = {}
+        for line in xrange(dict_size):
+            curr_word = []
+            while True:
+                ch = embedding_file.read(1)
+                if ch == ' ':
+                    curr_word = ''.join(curr_word)
+                    break
+                if ch != '\n':
+                    curr_word.append(ch)
+            embedding_vec = list(np.fromstring(embedding_file.read(binary_len), dtype='float32'))
+            if curr_word in vocab:
+                new_vocab[curr_word] = (vocab[curr_word], embedding_vec)
+
+        for word, idx in vocab.iteritems():
+            if word not in new_vocab:
+                new_vocab[word] = (idx, [0.0] * embedding_dim)
+
+        return new_vocab
+
+
 def load_twitter_rnn():
     # dataset = list(open("./input/twitter/training_set_05.tsv"))
     dataset = list(open("./input/twitter/training_set_100.tsv"))
@@ -100,7 +128,10 @@ def load_twitter_rnn():
     # I, O, B encoding
     num_classes = 3
 
-    return [x, y, vocab, vocab_inv, num_classes]
+    # get embedding vocab
+    emb_vocab = build_vocab_embedding(vocab)
+
+    return [x, y, vocab, vocab_inv, emb_vocab, num_classes]
 
 
 def batch_iter(x, y, batch_size, num_epochs):
