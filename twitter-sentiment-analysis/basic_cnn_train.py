@@ -187,8 +187,8 @@ def initiate(args):
                     # Conduct analysis if the current model is the best so far
                     if accuracy > best_test_accuracy:
                         best_test_accuracy = accuracy
-                        analysis_logger.write("Analysis at {}: acc={}".format(current_step, accuracy))
-                        analysis_logger.write("Tweet\tPred\tTrue")
+                        analysis_logger.write("Analysis at {}: acc={}".format(current_step, accuracy, begin=True))
+                        analysis_logger.write("Tweet\tPred\tTrue (0=Positive, 1=Neutral, 2=Negative)")
                         for i in range(len(x_dev)):
                             tweet_idx = x_dev[i]
                             prediction, true_label = predictions[i], targets[i]
