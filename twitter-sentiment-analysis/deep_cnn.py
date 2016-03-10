@@ -127,3 +127,10 @@ class DeepCNN(object):
             self.grads_and_vars = optimizer.compute_gradients(self.loss)
             self.global_step = tf.Variable(0, name="global_step", trainable=False)
             self.train_op = optimizer.apply_gradients(self.grads_and_vars, global_step=self.global_step)
+
+            # l2 norm clipping
+            self.weight_rescaling_op = []
+            for var in tf.trainable_variables():
+                if var.name.startswith('output/W'):
+                    updated_var = tf.clip_by_norm(var, args.l2_limit)
+                    self.weight_rescaling_op.append(tf.assign(var, updated_var))

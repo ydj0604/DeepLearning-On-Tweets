@@ -15,18 +15,20 @@ def main():
     # model hyper-parameters
     parser.add_argument('--filter_sizes', type=str, default='3,4,5',
                         help='Comma-separated filter sizes')
-    parser.add_argument('--num_filters', type=int, default=128,
-                        help='Number of filters per filter size (default: 256)')
+    parser.add_argument('--num_filters', type=int, default=100,
+                        help='Number of filters per filter size')
     parser.add_argument('--dropout_keep_prob', type=float, default=0.5,
                         help='Dropout keep probability (default: 0.5)')
-    parser.add_argument('--l2_reg_lambda', type=float, default=5.0,
-                        help='L2 regularizaion lambda (default: 0.0)')
+    parser.add_argument('--l2_reg_lambda', type=float, default=0.5,
+                        help='L2 regularizaion lambda (default: 0.5)')
+    parser.add_argument('--l2_limit', type=float, default=3.0,
+                        help='L2 norm limit for rescaling')
 
     # training parameters
     parser.add_argument('--batch_size', type=int, default=64,
                         help='Batch Size (default: 64)')
-    parser.add_argument('--num_epochs', type=int, default=200,
-                        help='Number of training epochs (default: 200)')
+    parser.add_argument('--num_epochs', type=int, default=50,
+                        help='Number of training epochs')
     parser.add_argument('--evaluate_every', type=int, default=100,
                         help='Evaluate model on dev set after this many steps (default: 200)')
     parser.add_argument('--checkpoint_every', type=int, default=100,
@@ -45,7 +47,7 @@ def main():
                        help='directory to store checkpointed models')
     parser.add_argument('--train', type=int, default=1,
                        help='train from scratch')
-    parser.add_argument('--model', type=str, default='basic',
+    parser.add_argument('--model', type=str, default='deep',
                        help='which model to run')
     parser.add_argument('--data', type=str, default='semeval',
                        help='which data to run')
@@ -66,6 +68,8 @@ def initiate(args):
     # initiate logger
     log_file_path = os.path.join(out_dir, 'log')
     logger = Logger(log_file_path)
+    analysis_file_path = os.path.join(out_dir, 'analysis')
+    analysis_logger = Logger(analysis_file_path)
 
     # report parameters
     logger.write("\nParameters:")
@@ -136,6 +140,7 @@ def initiate(args):
         _, step, loss, accuracy, summaries = sess.run(
             [model.train_op, model.global_step, model.loss, model.accuracy, train_summary_op],
             feed_dict)
+        sess.run(model.weight_rescaling_op)  # l2 norm rescaling
         writer.add_summary(summaries, step)
         if log:
             time_str = datetime.datetime.now().isoformat()
@@ -154,6 +159,7 @@ def initiate(args):
         time_str = datetime.datetime.now().isoformat()
         logger.write("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
         logger.write("")
+        return accuracy, predictions, targets
 
     # start a session
     sess_conf = tf.ConfigProto(
@@ -167,6 +173,7 @@ def initiate(args):
         current_step = 0
 
         if args.train:  # train the model from scratch
+            best_test_accuracy = 0.0
             for x_batch, y_batch in batches:
                 # train
                 train_model(x_batch, y_batch, args.dropout_keep_prob, train_summary_writer,
@@ -175,7 +182,22 @@ def initiate(args):
 
                 # evaluate with dev set
                 if current_step % args.evaluate_every == 0:
-                    test_model(x_dev, y_dev)
+                    accuracy, predictions, targets = test_model(x_dev, y_dev)
+
+                    # Conduct analysis if the current model is the best so far
+                    if accuracy > best_test_accuracy:
+                        best_test_accuracy = accuracy
+                        analysis_logger.write("Analysis at {}: acc={}".format(current_step, accuracy))
+                        analysis_logger.write("Tweet\tPred\tTrue")
+                        for i in range(len(x_dev)):
+                            tweet_idx = x_dev[i]
+                            prediction, true_label = predictions[i], targets[i]
+                            try:
+                                tweet = " ".join([vocabulary_inv[word_idx] for word_idx in tweet_idx if word_idx != 0])
+                                analysis_logger.write("{}\t{}\t{}".format(tweet, prediction, true_label))
+                            except UnicodeEncodeError:
+                                analysis_logger.write("{}\t{}\t{}".format("ENCODING ERROR", prediction, true_label))
+                        analysis_logger.write("\n")
 
                 # save model
                 if current_step % args.checkpoint_every == 0:
