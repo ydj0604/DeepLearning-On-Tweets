@@ -126,12 +126,14 @@ def load_data_and_labels_sam():
     return [x_text, y]
 
 
-def pad_sentences(sentences, sequence_length, padding_word="<PAD/>"):
+def pad_sentences(sentences, sequence_length, padding_word="<PAD/>", num_pads=4):
     padded_sentences = []
     for i in range(len(sentences)):
         sentence = sentences[i]
-        num_padding = sequence_length - len(sentence)
-        new_sentence = sentence + [padding_word] * num_padding
+        new_sentence = [padding_word] * num_pads
+        new_sentence += sentence
+        num_pads_left = sequence_length + num_pads * 2 - len(new_sentence)
+        new_sentence += [padding_word] * num_pads_left
         padded_sentences.append(new_sentence)
     return padded_sentences
 
