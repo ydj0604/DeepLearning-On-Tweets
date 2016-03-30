@@ -126,6 +126,35 @@ def load_data_and_labels_sam():
     return [x_text, y]
 
 
+def load_data_and_labels_gameforum():
+    # load
+    with open("./input/gameforum-1000.csv", 'rU') as f:
+        rdr = csv.reader(f)
+        dataset = list(rdr)[1:]  # remove header
+
+    dataset = [entry for entry in dataset if (entry[1] == '1' or entry[1] == '2' or entry[1] == '3')]
+
+    # generate x
+    tk = TweetTokenizer(reduce_len=True)
+    x_text = [entry[0] for entry in dataset]
+    x_text = [clean_str(post) for post in x_text]
+    x_text = [tk.tokenize(post) for post in x_text]
+
+    # generate y
+    y = [entry[1] for entry in dataset]
+    for idx, label in enumerate(y):
+        if label == '1':  # positive
+            y[idx] = [1, 0, 0]
+        elif label == '2':  # neutral
+            y[idx] = [0, 1, 0]
+        elif label == '3':  # negative
+            y[idx] = [0, 0, 1]
+        else:
+            print 'wrong label in gameforum: ' + label
+
+    return [x_text, y]
+
+
 def pad_sentences(sentences, sequence_length, padding_word="<PAD/>", num_pads=4):
     padded_sentences = []
     for i in range(len(sentences)):
@@ -256,6 +285,33 @@ def load_data_semeval_only(use_pretrained_embedding):
 
     # prepare input
     x, y = build_input_data(tweets_padded, labels, vocabulary)
+
+    # shuffle and split
+    np.random.seed(10)  # TODO: to use a fixed dev set
+    shuffle_indices = np.random.permutation(np.arange(len(labels)))
+    x_shuffled = x[shuffle_indices]
+    y_shuffled = y[shuffle_indices]
+    dev_size = int(len(labels) * 0.1)  # TODO: dev ratio = 0.1
+    x_train, x_dev = x_shuffled[:-dev_size], x_shuffled[-dev_size:]
+    y_train, y_dev = y_shuffled[:-dev_size], y_shuffled[-dev_size:]
+
+    return [x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding]
+
+
+def load_data_gameforum_only(use_pretrained_embedding):
+    # load train set from gameforum
+    posts, labels = load_data_and_labels_gameforum()
+
+    # pad train and dev tweets
+    max_seq_len = max([len(post) for post in posts])
+    posts_padded = pad_sentences(posts, max_seq_len)
+
+    # build vocab
+    vocabulary, vocabulary_inv = build_vocab(posts_padded)
+    vocabulary_embedding = build_vocab_embedding(vocabulary) if use_pretrained_embedding else None
+
+    # prepare input
+    x, y = build_input_data(posts_padded, labels, vocabulary)
 
     # shuffle and split
     np.random.seed(10)  # TODO: to use a fixed dev set

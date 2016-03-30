@@ -47,9 +47,9 @@ def main():
                        help='directory to store checkpointed models')
     parser.add_argument('--train', type=int, default=1,
                        help='train from scratch')
-    parser.add_argument('--model', type=str, default='deep',
+    parser.add_argument('--model', type=str, default='basic',
                        help='which model to run')
-    parser.add_argument('--data', type=str, default='semeval',
+    parser.add_argument('--data', type=str, default='gameforum',
                        help='which data to run')
 
     args = parser.parse_args()
@@ -79,9 +79,12 @@ def initiate(args):
 
     # load data
     logger.write("Loading data...")
-    x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = \
-        data_helpers.load_data_semeval_only(args.use_pretrained_embedding) if args.data == 'semeval' \
-        else data_helpers.load_data(args.use_pretrained_embedding)
+    if args.data == 'gameforum':
+        x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = data_helpers.load_data_gameforum_only(args.use_pretrained_embedding);
+    elif args.data == 'semeval':
+        x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = data_helpers.load_data_semeval_only(args.use_pretrained_embedding)
+    else:
+        x_train, y_train, x_dev, y_dev, vocabulary, vocabulary_inv, vocabulary_embedding = data_helpers.load_data(args.use_pretrained_embedding)
     num_classes = len(y_train[0])
 
     # report
