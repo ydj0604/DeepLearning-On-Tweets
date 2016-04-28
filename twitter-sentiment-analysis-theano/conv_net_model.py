@@ -183,6 +183,9 @@ def get_idx_from_sent(sent, word_idx_map, max_l, filter_h):
         x.append(0)
     words = sent.split()
     for word in words:
+        if len(x) == max_l+2*pad:
+            print sent
+            break
         if word in word_idx_map:
             x.append(word_idx_map[word])
     while len(x) < max_l+2*pad:
@@ -199,9 +202,12 @@ def make_idx_data_cv(revs, word_idx_map, max_l, filter_h):
     data = np.array(data, dtype="int")
     return data
 
-# def train(self, data, sent_max_len, batch_size, num_epochs):
 
 def clean_tweet(tweet):
+    # reduction
+    tweet = re.sub(r"!!![!]*", "!!!", tweet)
+    tweet = re.sub(r"\?\?\?[\?]*", "???", tweet)
+
     # separate
     tweet = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", tweet)
     tweet = re.sub(r"\'s", " \'s", tweet)
@@ -238,7 +244,8 @@ def clean_tweet(tweet):
     return tweet.strip().lower()
 
 
-def all_freshmen_tweets(model, word_idx_map, sent_len_max, filter_h):
+def all_freshmen_tweets_pred(model, word_idx_map, sent_len_max, filter_h):
+    print "make predictions fora all freshmen tweets..."
     tweets = []
     with open("tweet/freshmen_tweets_all.csv", "rb") as f_in:
         with open("tweet/freshmen_tweets_all_preds.csv", "wb") as f_out:
@@ -269,7 +276,7 @@ if __name__=="__main__":
 
     model = ConvNetModel(len(train_data[0])-1, [0.0, 0.0], [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], W2)
     model.train(train_data, 50, 10)
-    all_freshmen_tweets(model, word_idx_map, sent_len_max, 5)
+    all_freshmen_tweets_pred(model, word_idx_map, sent_len_max, 5)
 
     # # preds = model.predict(np.array([get_idx_from_sent("I hate him", word_idx_map, sent_len_max, 5),
     # #                                 get_idx_from_sent("I love him", word_idx_map, sent_len_max, 5)], dtype="int"))
