@@ -16,7 +16,7 @@ import theano.tensor as T
 import warnings
 import pandas as pd
 import time
-warnings.filterwarnings("ignore")   
+warnings.filterwarnings("ignore")
 
 
 # different non-linearities
@@ -135,12 +135,12 @@ def train_conv_net(datasets,
              givens={
                 x: train_set_x[index * batch_size: (index + 1) * batch_size],
                  y: train_set_y[index * batch_size: (index + 1) * batch_size]},
-                                 allow_input_downcast=True)               
+                                 allow_input_downcast=True)
     train_model = theano.function([index], cost, updates=grad_updates,
           givens={
             x: train_set_x[index*batch_size:(index+1)*batch_size],
               y: train_set_y[index*batch_size:(index+1)*batch_size]},
-                                  allow_input_downcast = True)     
+                                  allow_input_downcast = True)
     test_pred_layers = []
     test_size = test_set_x.shape[0]
     test_layer0_input = Words[T.cast(x.flatten(),dtype="int32")].reshape((test_size,1,img_h,Words.shape[1]))
@@ -150,7 +150,7 @@ def train_conv_net(datasets,
     test_layer1_input = T.concatenate(test_pred_layers, 1)
     test_y_pred = classifier.predict(test_layer1_input)
     test_error = T.mean(T.neq(test_y_pred, y))
-    test_model_all = theano.function([x,y], test_error, allow_input_downcast = True)   
+    test_model_all = theano.function([x,y], test_error, allow_input_downcast = True)
     
     #start training over mini-batches
     print '... training'
