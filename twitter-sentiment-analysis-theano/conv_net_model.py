@@ -6,6 +6,9 @@ import warnings
 from collections import OrderedDict
 import pandas as pd
 import time
+from collections import defaultdict
+import csv
+import re
 warnings.filterwarnings("ignore")
 
 
@@ -198,6 +201,63 @@ def make_idx_data_cv(revs, word_idx_map, max_l, filter_h):
 
 # def train(self, data, sent_max_len, batch_size, num_epochs):
 
+def clean_tweet(tweet):
+    # separate
+    tweet = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", tweet)
+    tweet = re.sub(r"\'s", " \'s", tweet)
+    tweet = re.sub(r"\'ve", " \'ve", tweet)
+    tweet = re.sub(r"n\'t", " n\'t", tweet)
+    tweet = re.sub(r"\'re", " \'re", tweet)
+    tweet = re.sub(r"\'d", " \'d", tweet)
+    tweet = re.sub(r"\'ll", " \'ll", tweet)
+    tweet = re.sub(r",", " , ", tweet)
+    tweet = re.sub(r"!", " ! ", tweet)
+    tweet = re.sub(r"\(", " \( ", tweet)
+    tweet = re.sub(r"\)", " \) ", tweet)
+    tweet = re.sub(r"\?", " \? ", tweet)
+    tweet = re.sub(r"\s{2,}", " ", tweet)
+
+    # URL normalization
+    tweet = re.sub(r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)",
+                    "<url>", tweet)
+
+    # Twitter ID normalization
+    tweet = re.sub(r"@([A-Za-z0-9_]{1,15})", "<twitter-id>", tweet)
+
+    # Positive emoticon normalization
+    tweet = re.sub(r":\)", " <pos-emo>", tweet)
+    tweet = re.sub(r":-\)", " <pos-emo>", tweet)
+    tweet = re.sub(r":]", " <pos-emo>", tweet)
+    tweet = re.sub(r"=]", " <pos-emo>", tweet)
+
+    # Negative emoticon normalization
+    tweet = re.sub(r":\(", " <neg-emo>", tweet)
+    tweet = re.sub(r":-\(", " <neg-emo>", tweet)
+    tweet = re.sub(r":\[", " <neg-emo>", tweet)
+    tweet = re.sub(r"=\[", " <neg-emo>", tweet)
+    return tweet.strip().lower()
+
+
+def all_freshmen_tweets(model, word_idx_map, sent_len_max, filter_h):
+    tweets = []
+    with open("tweet/freshmen_tweets_all.csv", "rb") as f_in:
+        with open("tweet/freshmen_tweets_all_preds.csv", "wb") as f_out:
+            rdr = csv.reader(f_in)
+            writer = csv.writer(f_out)
+            hdr = True
+            for row in rdr:
+                if hdr:  # skip header
+                    hdr = False
+                    row.append("Sentiment (0=pos 1=neutral 1=negative)")
+                    writer.writerow(row)
+                    continue
+                tweet_processed = get_idx_from_sent(clean_tweet(row[3]), word_idx_map, sent_len_max, filter_h)
+                input = np.array([tweet_processed], dtype="int")
+                pred = model.predict(input)[0]
+                row.append(str(pred))
+                writer.writerow(row)
+
+
 if __name__=="__main__":
     execfile("conv_net_classes.py")
 
@@ -207,9 +267,10 @@ if __name__=="__main__":
     sent_len_max = np.max(pd.DataFrame(revs)["num_words"])
     train_data = make_idx_data_cv(revs, word_idx_map, sent_len_max, 5)
 
-    # sentence_len, classifier_params, conv_layer_params, word_embeddings
     model = ConvNetModel(len(train_data[0])-1, [0.0, 0.0], [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], W2)
     model.train(train_data, 50, 10)
-    preds = model.predict(np.array([get_idx_from_sent("I hate him", word_idx_map, sent_len_max, 5),
-                                    get_idx_from_sent("I love him", word_idx_map, sent_len_max, 5)], dtype="int"))
-    print preds
+    all_freshmen_tweets(model, word_idx_map, sent_len_max, 5)
+
+    # # preds = model.predict(np.array([get_idx_from_sent("I hate him", word_idx_map, sent_len_max, 5),
+    # #                                 get_idx_from_sent("I love him", word_idx_map, sent_len_max, 5)], dtype="int"))
+
