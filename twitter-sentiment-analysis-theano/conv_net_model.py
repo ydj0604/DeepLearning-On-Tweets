@@ -107,7 +107,7 @@ class ConvNetModel():
             for minibatch_index in np.random.permutation(range(n_train_batches)):
                 cost_epoch = train_model(minibatch_index)
                 set_zero(zero_vec)
-                print 'cost: %.2f' % cost_epoch
+                # print 'cost: %.2f' % cost_epoch
 
             train_losses = [test_model(i) for i in xrange(n_train_batches)]
             train_perf = 1 - np.mean(train_losses)
