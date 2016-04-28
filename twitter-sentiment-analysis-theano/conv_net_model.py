@@ -209,6 +209,7 @@ if __name__=="__main__":
 
     # sentence_len, classifier_params, conv_layer_params, word_embeddings
     model = ConvNetModel(len(train_data[0])-1, [0.0, 0.0], [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], W2)
-    model.train(train_data, 50, 20)
-    preds = model.predict(np.array([[0]*50, [1]*50], dtype="int"))
+    model.train(train_data, 50, 10)
+    preds = model.predict(np.array([get_idx_from_sent("I hate him", word_idx_map, sent_len_max, 5),
+                                    get_idx_from_sent("I love him", word_idx_map, sent_len_max, 5)], dtype="int"))
     print preds
