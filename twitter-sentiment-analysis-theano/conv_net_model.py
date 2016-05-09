@@ -244,18 +244,18 @@ def clean_tweet(tweet):
     return tweet.strip().lower()
 
 
-def all_freshmen_tweets_pred(model, word_idx_map, sent_len_max, filter_h):
-    print "make predictions fora all freshmen tweets..."
+def all_freshmen_tweets_pred(file, model, word_idx_map, sent_len_max, filter_h):
+    print "make predictions for all freshmen tweets..."
     tweets = []
-    with open("tweet/freshmen_tweets_all.csv", "rb") as f_in:
-        with open("tweet/freshmen_tweets_all_preds.csv", "wb") as f_out:
+    with open(file, "rb") as f_in:
+        with open("tweet/all_preds.csv", "wb") as f_out:
             rdr = csv.reader(f_in)
             writer = csv.writer(f_out)
             hdr = True
             for row in rdr:
                 if hdr:  # skip header
                     hdr = False
-                    row.append("Sentiment (0=pos 1=neutral 1=negative)")
+                    row.append("Sentiment (0=pos 1=neutral 2=negative)")
                     writer.writerow(row)
                     continue
                 tweet_processed = get_idx_from_sent(clean_tweet(row[3]), word_idx_map, sent_len_max, filter_h)
@@ -275,8 +275,8 @@ if __name__=="__main__":
     train_data = make_idx_data_cv(revs, word_idx_map, sent_len_max, 5)
 
     model = ConvNetModel(len(train_data[0])-1, [0.0, 0.0], [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], W2)
-    model.train(train_data, 50, 10)
-    all_freshmen_tweets_pred(model, word_idx_map, sent_len_max, 5)
+    model.train(train_data, 50, 0)
+    all_freshmen_tweets_pred("tweet/justin_data.csv", model, word_idx_map, sent_len_max, 5)
 
     # # preds = model.predict(np.array([get_idx_from_sent("I hate him", word_idx_map, sent_len_max, 5),
     # #                                 get_idx_from_sent("I love him", word_idx_map, sent_len_max, 5)], dtype="int"))
