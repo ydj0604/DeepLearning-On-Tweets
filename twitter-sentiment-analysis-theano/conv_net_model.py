@@ -275,8 +275,8 @@ if __name__=="__main__":
     train_data = make_idx_data_cv(revs, word_idx_map, sent_len_max, 5)
 
     model = ConvNetModel(len(train_data[0])-1, [0.0, 0.0], [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], W2)
-    model.train(train_data, 50, 0)
-    all_freshmen_tweets_pred("tweet/justin_data.csv", model, word_idx_map, sent_len_max, 5)
+    model.train(train_data, 50, 12)
+    all_freshmen_tweets_pred("tweet/justin_data_full.csv", model, word_idx_map, sent_len_max, 5)
 
     # # preds = model.predict(np.array([get_idx_from_sent("I hate him", word_idx_map, sent_len_max, 5),
     # #                                 get_idx_from_sent("I love him", word_idx_map, sent_len_max, 5)], dtype="int"))
